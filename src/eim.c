@@ -115,6 +115,7 @@ void* FcitxChewingCreate(FcitxInstance* instance)
     
     if (NULL == chewing->context) {
         FcitxLog(DEBUG, "chewing init failed");
+        free(chewing);
         return NULL;
     } else {
         FcitxLog(DEBUG, "chewing init ok");
@@ -175,18 +176,20 @@ INPUT_RETURN_VALUE FcitxChewingDoInput(void* arg, FcitxKeySym sym, unsigned int 
         int scan_code = (int) sym & 0xff;
         chewing_handle_Default(ctx, scan_code);
     } else if (FcitxHotkeyIsHotKey(sym, state, FCITX_BACKSPACE)) {
-        if (chewing_buffer_Len(ctx) == 0)
+        const char* zuin_str = chewing_bopomofo_String_static(ctx);
+        if (chewing_buffer_Len(ctx) == 0 && !zuin_str[0])
             return IRV_TO_PROCESS;
         chewing_handle_Backspace(ctx);
-        if (chewing_buffer_Len(ctx) == 0)
+        if (chewing_buffer_Len(ctx) == 0 && !zuin_str[0])
             return IRV_CLEAN;
     } else if (FcitxHotkeyIsHotKey(sym, state, FCITX_ESCAPE)) {
         chewing_handle_Esc(ctx);
     } else if (FcitxHotkeyIsHotKey(sym, state, FCITX_DELETE)) {
-        if (chewing_buffer_Len(ctx) == 0)
+        const char* zuin_str = chewing_bopomofo_String_static(ctx);
+        if (chewing_buffer_Len(ctx) == 0 && !zuin_str[0])
             return IRV_TO_PROCESS;
         chewing_handle_Del(ctx);
-        if (chewing_buffer_Len(ctx) == 0)
+        if (chewing_buffer_Len(ctx) == 0 && !zuin_str[0])
             return IRV_CLEAN;
     } else if (FcitxHotkeyIsHotKey(sym, state, FCITX_CHEWING_UP)) {
         chewing_handle_Up(ctx);
@@ -309,7 +312,6 @@ INPUT_RETURN_VALUE FcitxChewingGetCandWords(void* arg)
     ChewingContext * ctx = chewing->context;
     FcitxGlobalConfig* config = FcitxInstanceGetGlobalConfig(chewing->owner);
     FcitxCandidateWordList* candList = FcitxInputStateGetCandidateList(input);
-    const char *zuin_str;
 
     int selkey[10];
     int i = 0;
@@ -326,7 +328,7 @@ INPUT_RETURN_VALUE FcitxChewingGetCandWords(void* arg)
     FcitxInstanceCleanInputWindow(chewing->owner);
 
     char * buf_str = chewing_buffer_String(ctx);
-    zuin_str = chewing_bopomofo_String_static(ctx);
+    const char* zuin_str = chewing_bopomofo_String_static(ctx);
     ConfigChewing(chewing);
 
     FcitxLog(DEBUG, "%s %s", buf_str, zuin_str);
